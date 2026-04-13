@@ -31,8 +31,10 @@ This repository is a **generic Agentic SDLC Framework** for GitHub Copilot. It a
 │   ├── security-best-practices/# OWASP Top 10, secrets, input validation
 │   │   └── references/owasp-checklist.md
 │   ├── system-design/          # Architecture patterns and ADRs
-│   └── testing-strategy/       # Test design, mocking, coverage
-│       └── references/test-patterns.md
+│   ├── testing-strategy/       # Test design, mocking, coverage
+│   │   └── references/test-patterns.md
+│   ├── data-testing/           # Data quality, schema, pipeline testing
+│   └── ai-testing/             # LLM, prompt, AI workflow testing
 ├── instructions/               # Auto-applied coding standards
 │   ├── code-standards.instructions.md
 │   ├── security-and-owasp.instructions.md
@@ -192,6 +194,8 @@ Skills are **on-demand engineering knowledge** loaded by agents when relevant. T
 | `code-quality` | Developer, Reviewer | Naming, function design, error handling, anti-patterns |
 | `security-best-practices` | Developer, Reviewer | OWASP Top 10, secrets, input validation |
 | `testing-strategy` | Test Engineer | Test design, mocking, coverage, AAA pattern |
+| `data-testing` | Test Engineer | Data quality, schema contracts, DataFrame fixtures, pipeline testing |
+| `ai-testing` | Test Engineer | Prompt testing, LLM response validation, non-determinism, cost guardrails |
 | `project-planning` | Planner | INVEST criteria, decomposition, dependency mapping |
 | `system-design` | Architect | Architecture patterns, ADRs, interface design |
 | `documentation-standards` | Docs Engineer | README templates, writing style, docstring formats |

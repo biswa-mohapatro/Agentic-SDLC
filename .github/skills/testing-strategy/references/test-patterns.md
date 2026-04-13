@@ -233,3 +233,60 @@ Examples:
 - **Unit**: No I/O, no network, no database. Mock external dependencies.
 - **Integration**: Real database/API calls. Use test containers or fixtures.
 - **E2E**: Full system with browser/HTTP client. Only for critical paths.
+
+---
+
+## 11. Data Quality Assertions
+
+```python
+import pandas as pd
+
+def test_output_has_no_null_primary_keys(result_df):
+    assert result_df["id"].notna().all(), "Null values in primary key"
+
+def test_output_primary_key_is_unique(result_df):
+    assert result_df["id"].is_unique, "Duplicate primary keys"
+
+def test_amounts_within_valid_range(result_df):
+    assert result_df["amount"].between(0, 1_000_000).all()
+
+def test_schema_matches_contract(result_df):
+    expected = {"id": "int64", "name": "object", "amount": "float64"}
+    for col, dtype in expected.items():
+        assert col in result_df.columns, f"Missing: {col}"
+        assert str(result_df[col].dtype) == dtype, f"{col} dtype mismatch"
+```
+
+---
+
+## 12. LLM / AI Response Testing
+
+```python
+from unittest.mock import MagicMock, AsyncMock
+
+@pytest.fixture
+def mock_llm():
+    llm = MagicMock()
+    llm.complete.return_value = '{"summary": "test", "confidence": 0.9}'
+    return llm
+
+def test_structured_response_has_required_fields(mock_llm):
+    result = summarize(document="doc", llm=mock_llm)
+    assert "summary" in result
+    assert 0.0 <= result["confidence"] <= 1.0
+
+def test_malformed_llm_response_raises(mock_llm):
+    mock_llm.complete.return_value = "not json"
+    with pytest.raises(LLMResponseError):
+        summarize(document="doc", llm=mock_llm)
+
+def test_retry_on_rate_limit(mock_llm):
+    mock_llm.complete.side_effect = [RateLimitError("429"), '{"answer": "ok"}']
+    result = call_with_retry(mock_llm, prompt="test", max_retries=2)
+    assert result == {"answer": "ok"}
+    assert mock_llm.complete.call_count == 2
+
+def test_prompt_within_token_budget():
+    prompt = build_prompt(context="x" * 10000, query="test")
+    assert count_tokens(prompt) <= 8000
+```

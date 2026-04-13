@@ -59,6 +59,12 @@ test_<unit>_<scenario>_<expected>
 | Boundary values | 0, 1, -1, max size, empty string |
 | Error paths | Missing credentials, timeout, bad config |
 | Type mismatches | Wrong type passed to a typed parameter |
+| Data nulls | All-null column, null in primary key, null in group-by key |
+| Schema drift | Missing column, renamed column, changed dtype |
+| Duplicates | Exact row duplicates, duplicates on business key subset |
+| LLM empty response | `""`, `"{}"`, `null`, response blocked by safety filter |
+| LLM malformed output | Invalid JSON, missing required keys, wrong value types |
+| Token overflow | Input exceeds context window, output truncated mid-sentence |
 
 ## Coverage Targets
 
