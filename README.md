@@ -341,3 +341,9 @@ The `plugin.json` at root provides metadata. VS Code auto-discovers agents, skil
 ## Remaining Roadmap
 
 - **Agentic Workflows**: CI automation via GitHub Actions
+
+## References:
+- **GitHub Copilot Best Practices**: https://docs.github.com/en/copilot/get-started/best-practices
+- **GitHub Copilot Guide**: https://github.com/github/awesome-copilot/tree/main
+- **Test Driven Development Guide**: https://code.visualstudio.com/docs/copilot/guides/test-driven-development-guide
+- **VSCode Context Engineering Guide**: https://code.visualstudio.com/docs/copilot/guides/context-engineering-guide
