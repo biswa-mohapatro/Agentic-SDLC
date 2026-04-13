@@ -1,0 +1,5 @@
+{
+  "name": "sdlc-workflow",
+  "description": "Agentic SDLC Framework — Automates the software development lifecycle from PRD to deployment using role-based AI agents with Jira/Confluence integration",
+  "version": "1.0.0"
+}

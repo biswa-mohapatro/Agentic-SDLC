@@ -1,4 +1,4 @@
-# Agentic-SDLC
+# AGENTS.md
 
 ## Overview
 
@@ -36,10 +36,7 @@ This repository is a **generic Agentic SDLC Framework** for GitHub Copilot. It a
 ├── instructions/               # Auto-applied coding standards
 │   ├── code-standards.instructions.md
 │   ├── security-and-owasp.instructions.md
-│   ├── agent-authoring.instructions.md
-│   ├── testing-conventions.instructions.md
-│   ├── context-engineering.instructions.md
-│   └── documentation-standards.instructions.md
+│   └── agent-authoring.instructions.md
 ├── .github/
 │   └── hooks/                  # Lifecycle hooks (PreToolUse, SessionStart, Stop)
 │       ├── tool-guardian.json   # Blocks destructive terminal commands
@@ -53,82 +50,6 @@ This repository is a **generic Agentic SDLC Framework** for GitHub Copilot. It a
 ├── copilot-instructions.md     # Project context + MCP toggles (template)
 └── AGENTS.md                   # This file
 ```
-
-## How It Works
-
-### Auto-Discovery
-
-VS Code discovers every piece of this framework from the `.github/` directory structure — no manual registration needed:
-
-| File Type | Pattern | Discovery Mechanism |
-|-----------|---------|-------------------|
-| **Agents** | `agents/*.agent.md` | Appear in the Copilot Chat agent picker |
-| **Prompts** | `prompts/*.prompt.md` | Appear as `/slash-commands` in chat |
-| **Skills** | `skills/*/SKILL.md` | Loaded on-demand when an agent's task matches the skill description |
-| **Instructions** | `instructions/*.instructions.md` | Auto-injected when a file matching the `applyTo` glob is in scope |
-| **Hooks** | `hooks/*.json` | Run at lifecycle events (before tool use, session start/stop) |
-
-### What Fires When
-
-```
-You type in Copilot Chat
-        │
-        ├─ Always injected ──────────► copilot-instructions.md (project-wide context)
-        │
-        ├─ File is open/mentioned ───► instructions/*.instructions.md
-        │                               (only those whose applyTo glob matches)
-        │
-        ├─ You pick an agent ────────► agents/*.agent.md
-        │   or use a /prompt              │
-        │                                 ├─ Agent loads skills on demand
-        │                                 │   (when the task matches a skill description)
-        │                                 │
-        │                                 └─ Agent hands off to next agent
-        │                                     (via handoffs: in frontmatter)
-        │
-        └─ Agent calls a tool ───────► hooks/*.json
-                                        (PreToolUse → tool-guardian blocks danger)
-```
-
-### Walk-Through: `/PRD to MVP`
-
-1. **`copilot-instructions.md`** is injected (always-on project context, MCP toggles)
-2. **`prd-to-mvp.prompt.md`** fires — its `agent:` field routes to **Project Lead**
-3. **`project-lead.agent.md`** takes over as orchestrator and delegates phase-by-phase:
-   - **Planner** loads the `project-planning` skill for decomposition knowledge
-   - **Architect** loads the `system-design` skill for patterns and ADRs
-   - **Developer** loads `code-quality` + `security-best-practices` skills; editing a `.py` file auto-injects `code-standards` + `security-and-owasp` instructions
-   - **Test Engineer** loads the `testing-strategy` skill; editing test files auto-injects `testing-conventions` instructions
-   - **Reviewer** loads `code-quality` + `security-best-practices` skills
-   - **Docs Engineer** loads the `documentation-standards` skill; editing `.md` files auto-injects `documentation-standards` instructions
-4. Whenever any agent runs a terminal command, the **`tool-guardian`** hook intercepts and blocks destructive operations
-
-### Three Layers of Context
-
-```
-┌─────────────────────────────────────────────────┐
-│              Always-On Layer                     │
-│  copilot-instructions.md (project context)       │
-│  + instructions whose applyTo matches open files │
-└──────────────────────┬──────────────────────────┘
-                       │ injected into every interaction
-                       ▼
-┌─────────────────────────────────────────────────┐
-│              Workflow Layer                       │
-│  /prompt → agent → agent → agent (handoff chain) │
-│  Each agent loads relevant skills on demand      │
-└──────────────────────┬──────────────────────────┘
-                       │ agents call tools
-                       ▼
-┌─────────────────────────────────────────────────┐
-│              Safety Layer                        │
-│  hooks intercept tool calls                      │
-│  tool-guardian blocks destructive commands        │
-│  session-logger records audit trail              │
-└─────────────────────────────────────────────────┘
-```
-
-**Key insight**: Instructions and `copilot-instructions.md` are *invisible guardrails* — they shape every response without being explicitly invoked. Skills are *pulled* by agents. Prompts and agents are *pushed* by the user. Hooks are *safety interceptors* that wrap tool execution.
 
 ## SDLC Pipeline
 
@@ -205,9 +126,6 @@ Instructions automatically apply to matching files — no manual loading needed.
 | `code-standards` | `*.py, *.ts, *.js, *.jsx, *.tsx` | Naming, functions, error handling, imports |
 | `security-and-owasp` | All files | OWASP Top 10, credential safety, input validation |
 | `agent-authoring` | `*.agent.md, *.prompt.md, SKILL.md, *.instructions.md` | Frontmatter syntax, tool aliases, handoff patterns |
-| `testing-conventions` | `test_*.py, *.test.ts, *.test.js, tests/**, __tests__/**` | TDD workflow, AAA pattern, naming, isolation, coverage |
-| `context-engineering` | `copilot-instructions.md, *.agent.md, *.prompt.md, SKILL.md` | Context layering, progressive disclosure, freshness, anti-patterns |
-| `documentation-standards` | `*.md` | Writing style, formatting, README structure, quality checklist |
 
 ## MCP Integration
 
@@ -340,4 +258,5 @@ The `plugin.json` at root provides metadata. VS Code auto-discovers agents, skil
 
 ## Remaining Roadmap
 
+- **More Instructions**: testing-conventions, context-engineering, documentation-standards
 - **Agentic Workflows**: CI automation via GitHub Actions

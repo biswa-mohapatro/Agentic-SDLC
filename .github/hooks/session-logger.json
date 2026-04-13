@@ -1,0 +1,20 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "python .github/hooks/scripts/session-logger.py",
+        "windows": "python .github\\hooks\\scripts\\session-logger.py",
+        "timeout": 5
+      }
+    ],
+    "Stop": [
+      {
+        "type": "command",
+        "command": "python .github/hooks/scripts/session-logger.py",
+        "windows": "python .github\\hooks\\scripts\\session-logger.py",
+        "timeout": 5
+      }
+    ]
+  }
+}
