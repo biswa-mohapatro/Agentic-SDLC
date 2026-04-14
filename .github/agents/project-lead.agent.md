@@ -28,12 +28,58 @@ Execute these phases **sequentially**. Never skip a phase. Never start a phase u
 Do this yourself (do NOT delegate). Before any planning:
 
 1. **Read `copilot-instructions.md`** to understand the project's current state, completed work, open gaps, **and MCP integration preferences** (Jira/Confluence enabled or disabled for this project).
-2. **Jira Integration** (if enabled in `copilot-instructions.md`):
+
+2. **Project Classification** — Read the `## Project Classification` section in `copilot-instructions.md`. If any field is blank or missing, **ask the user interactively** before proceeding:
+
+   Ask these questions (skip any that are already filled in):
+   - **Archetype**: "What type of project is this?" → backend, frontend, fullstack, monorepo, microservice
+   - **Scope**: "What level of robustness do you need?" → prototype (validate an idea fast), mvp (functional but not hardened), production (full quality gates)
+   - **Stack**: "What tech stack?" → e.g., Python/FastAPI, React/Next.js, Python + React, Go + gRPC
+   - **Repo Strategy**: "Single repo, monorepo, or multi-repo?"
+   - **Auth Required**: "Does this need authentication?" → yes / no
+   - **Database**: "What database, if any?" → none, sqlite, postgres, mongo, dynamo, other
+   - **External Integrations**: "Any third-party services?" → none, or list them
+
+   Record the answers and use them to adapt all downstream phases.
+
+3. **Adapt Phase Sequence Based on Classification**:
+
+   | Scope | Phases to Run | What Changes |
+   |-------|--------------|--------------|
+   | **prototype** | Phase 0 → 3 → 4 | Skip architecture, review, docs. Minimal tests (happy path only). Single-file OK. No security hardening. |
+   | **mvp** | Phase 0 → 1 → 3 → 4 → 5 → 6 | Skip deep architecture (unless needed). Lightweight review. Minimal docs. |
+   | **production** | Phase 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 | All phases. Full security review. Complete docs. |
+
+   Override with archetype-specific adjustments:
+
+   | Archetype | Additional Adjustments |
+   |-----------|----------------------|
+   | **frontend** | No database tasks. Focus on component structure, routing, state management. |
+   | **backend** | No UI tasks. Focus on API contracts, data layer, business logic. |
+   | **fullstack** | Plan backend API first, then frontend consuming it. Separate test suites. |
+   | **monorepo** | Planner scopes tasks per package. Developer inits separate workspaces. Tests per package. |
+   | **microservice** | Planner defines API contracts between services first. Developer stubs interfaces for cross-service deps. |
+
+4. **Jira Integration** (if enabled in `copilot-instructions.md`):
    - If the user provided a Jira ticket key or URL, read it via `atlassian/*` tools to extract requirements, acceptance criteria, and context.
    - Transition the ticket from **Backlog** or **TODO** to **In Progress** (if auto-transition is enabled).
    - If the input is a Jira epic, read all linked stories/sub-tasks for the full scope.
-3. **Check the UV environment**: Look for `pyproject.toml` and `uv.lock` in the workspace root. If they don't exist, add "Set up UV project environment" as the **first task** in the plan for the Developer. If they exist, note this so the Developer runs `uv sync` before coding.
-4. **Read the PRD/requirement** and classify each item:
+5. **Branch Setup**:
+   - Run `git branch --show-current` to check the current branch.
+   - **Greenfield project** (no `dev` branch exists): Use the GitHub MCP `create_branch` tool to create `dev` and `test` branches from `main`. Then create a work branch from `dev` (e.g., `feature/<ticket-or-slug>`).
+   - **Existing project**: If on `main` or `dev`, use the GitHub MCP `create_branch` tool to create a work branch from `dev`:
+     - Feature: `feature/<ticket-or-slug>`
+     - Bug fix: `bugfix/<ticket-or-slug>`
+     - Refactor: `refactor/<slug>`
+   - Include the Jira ticket key in the branch name when one exists.
+   - Switch to the work branch before delegating to any sub-agent.
+6. **Check the project environment**: Detect the stack from config files (or from the classification answers):
+   - `pyproject.toml` / `uv.lock` → Python (UV). If missing, add "Set up UV project with `uv init` + `uv add --dev ruff pytest`" as the first Developer task.
+   - `package.json` → Node.js. If missing, add "Set up Node project with `npm init -y` + `npm i -D eslint prettier jest`" as the first Developer task.
+   - `*.csproj` / `go.mod` / `Cargo.toml` → .NET / Go / Rust. Note for Developer to run restore/tidy/build.
+   - **Fullstack / monorepo**: Ensure both backend and frontend environments are set up.
+   - If the environment exists, note this so the Developer runs the appropriate sync command before coding.
+7. **Read the PRD/requirement** and classify each item:
    - ✅ **Already done** — exists in codebase, matches the requirement. Skip entirely.
    - 🔄 **Needs modification** — partially exists but needs changes. Plan only the delta.
    - ✨ **New** — does not exist yet. Plan from scratch.
@@ -42,6 +88,18 @@ Do this yourself (do NOT delegate). Before any planning:
 
 ```
 ## Scoping Summary
+
+### Project Classification
+- Archetype: [backend | frontend | fullstack | monorepo | microservice]
+- Scope: [prototype | mvp | production]
+- Stack: [e.g., Python/FastAPI]
+- Repo Strategy: [single-repo | monorepo | multi-repo]
+- Auth: [yes | no]
+- Database: [none | sqlite | postgres | ...]
+- Integrations: [none | list]
+
+### Phase Sequence
+[List the phases that will run based on scope + archetype]
 
 ### Already Done (verified in code — will NOT be re-implemented)
 - [item]: [file(s) that prove it]
@@ -118,14 +176,34 @@ Do this yourself (do NOT delegate). After all phases complete:
 
 ## Adapting to Scope
 
-Not every task needs all phases:
+The phase sequence is driven by **two axes**: the work type (bug/feature/refactor) and the project classification (scope + archetype) set in Phase 0.
+
+### By Work Type
 - **Bug fix**: Phase 0 → Phase 3 → Phase 4 → Phase 5
 - **Small feature**: Phase 0 → Phase 1 → Phase 3 → Phase 4 → Phase 6
-- **Enhancement to existing PRD**: Phase 0 (critical — scope the delta) → Phase 1 → Phase 2 (if new abstractions needed) → Phase 3 → Phase 4 → Phase 5 → Phase 6
+- **Enhancement to existing PRD**: Phase 0 → Phase 1 → Phase 2 (if new abstractions) → Phase 3 → Phase 4 → Phase 5 → Phase 6
 - **Refactoring**: Phase 0 → Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5
-- **Full greenfield PRD**: All phases (Phase 0 confirms nothing exists yet)
+- **Full greenfield PRD**: All phases
 
-Assess the scope from the user's input and adjust. **Phase 0 is never skipped** — even for greenfield work it confirms the starting state.
+### By Project Scope (overrides)
+| Scope | Effect |
+|-------|--------|
+| **prototype** | Skip Phase 2 (architecture), Phase 5 (review), Phase 6 (docs). Tests cover happy path only. Single-file structures OK. No security hardening. |
+| **mvp** | Skip Phase 2 unless new abstractions needed. Lightweight Phase 5 (critical issues only). Minimal Phase 6. |
+| **production** | All phases run fully. No shortcuts. |
+
+### By Archetype (adjustments)
+| Archetype | Planner | Architect | Developer |
+|-----------|---------|-----------|-----------|
+| **backend** | No UI tasks. API-first. | Design API contracts, data layer. | Init backend stack only. |
+| **frontend** | No database/API tasks. | Design component tree, state, routing. | Init frontend stack only. |
+| **fullstack** | Backend tasks first, frontend consuming API second. | API contract → component design. | Init both stacks. Separate test suites. |
+| **monorepo** | Scope tasks per package. Shared deps first. | Define package boundaries, shared libs. | Init each workspace. Tests per package. |
+| **microservice** | API contracts between services first. | Inter-service contracts, event schemas. | Stub cross-service interfaces. |
+
+When scope = prototype AND archetype = any, **the Architect phase is always skipped** — use the simplest viable structure.
+
+Assess the scope from the user's input and the project classification. **Phase 0 is never skipped** — even for greenfield work it confirms the starting state and collects classification.
 
 ## Final Report
 

@@ -12,6 +12,10 @@
         "CONFLUENCE_USERNAME": "${env:CONFLUENCE_USERNAME}",
         "CONFLUENCE_API_TOKEN": "${env:CONFLUENCE_API_TOKEN}"
       }
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/insiders"
     }
   }
 }
