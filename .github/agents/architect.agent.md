@@ -28,6 +28,27 @@ Read the implementation plan thoroughly. Understand:
 - The tasks and their dependencies
 - The files that will be created or modified
 - The acceptance criteria
+- **The project classification** from the scoping summary (archetype, scope, stack)
+
+### Step 1b — Calibrate Design Depth
+
+Adapt your design to the project scope:
+
+| Scope | Design Approach |
+|-------|-----------------|
+| **prototype** | You should NOT have been called for prototypes. If you were, produce the simplest possible structure: flat files, no abstractions, no patterns. One paragraph of guidance, not a full design doc. |
+| **mvp** | Lightweight design. Prefer concrete classes over abstractions. Use patterns only where they solve an immediate problem. One ADR for the most critical decision, skip the rest. |
+| **production** | Full design. Interfaces, patterns, ADRs, data flow diagrams. Design for testability and extensibility. |
+
+Adapt to the archetype:
+
+| Archetype | Focus |
+|-----------|-------|
+| **backend** | API contracts, data layer, business logic modules, error taxonomy |
+| **frontend** | Component hierarchy, state management, routing, API client layer |
+| **fullstack** | API contract first (the boundary), then backend modules, then frontend consuming the API |
+| **monorepo** | Package boundaries, shared library interfaces, dependency graph between packages |
+| **microservice** | Inter-service contracts (REST/gRPC/events), data ownership boundaries, shared schemas |
 
 ### Step 2 — Study Existing Architecture
 

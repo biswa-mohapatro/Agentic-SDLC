@@ -31,15 +31,18 @@ This repository is a **generic Agentic SDLC Framework** for GitHub Copilot. It a
 │   ├── security-best-practices/# OWASP Top 10, secrets, input validation
 │   │   └── references/owasp-checklist.md
 │   ├── system-design/          # Architecture patterns and ADRs
-│   └── testing-strategy/       # Test design, mocking, coverage
-│       └── references/test-patterns.md
+│   ├── testing-strategy/       # Test design, mocking, coverage
+│   │   └── references/test-patterns.md
+│   ├── data-testing/           # Data quality, schema, pipeline testing
+│   └── ai-testing/             # LLM, prompt, AI workflow testing
 ├── instructions/               # Auto-applied coding standards
 │   ├── code-standards.instructions.md
 │   ├── security-and-owasp.instructions.md
 │   ├── agent-authoring.instructions.md
 │   ├── testing-conventions.instructions.md
 │   ├── context-engineering.instructions.md
-│   └── documentation-standards.instructions.md
+│   ├── documentation-standards.instructions.md
+│   └── development-workflow.instructions.md
 ├── .github/
 │   └── hooks/                  # Lifecycle hooks (PreToolUse, SessionStart, Stop)
 │       ├── tool-guardian.json   # Blocks destructive terminal commands
@@ -48,7 +51,7 @@ This repository is a **generic Agentic SDLC Framework** for GitHub Copilot. It a
 │           ├── tool-guardian.py
 │           └── session-logger.py
 ├── .vscode/
-│   └── mcp.json                # Atlassian MCP server configuration
+│   └── mcp.json                # Atlassian + GitHub MCP server configuration
 ├── plugin.json                 # Plugin metadata for distribution
 ├── copilot-instructions.md     # Project context + MCP toggles (template)
 └── AGENTS.md                   # This file
@@ -94,12 +97,15 @@ You type in Copilot Chat
 
 1. **`copilot-instructions.md`** is injected (always-on project context, MCP toggles)
 2. **`prd-to-mvp.prompt.md`** fires — its `agent:` field routes to **Project Lead**
-3. **`project-lead.agent.md`** takes over as orchestrator and delegates phase-by-phase:
-   - **Planner** loads the `project-planning` skill for decomposition knowledge
-   - **Architect** loads the `system-design` skill for patterns and ADRs
-   - **Developer** loads `code-quality` + `security-best-practices` skills; editing a `.py` file auto-injects `code-standards` + `security-and-owasp` instructions
-   - **Test Engineer** loads the `testing-strategy` skill; editing test files auto-injects `testing-conventions` instructions
-   - **Reviewer** loads `code-quality` + `security-best-practices` skills
+3. **Project Lead runs Phase 0** — reads the Project Classification from `copilot-instructions.md`. If fields are blank, **asks the user interactively**: archetype, scope, stack, repo strategy, auth, database, integrations.
+4. **Phase sequence is adapted** based on classification:
+   - *Prototype* → skip architecture, review, docs (Phase 0 → 3 → 4)
+   - *MVP* → skip deep architecture (Phase 0 → 1 → 3 → 4 → 5 → 6)
+   - *Production* → all phases (Phase 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7)
+5. **Downstream agents read the classification** and adapt:
+   - **Planner** adjusts task granularity (fewer/larger for prototypes, per-package for monorepos)
+   - **Architect** calibrates design depth (flat files for prototypes, full ADRs for production)
+   - **Developer** uses the right file structure (flat for backend, `packages/` for monorepo, `backend/` + `frontend/` for fullstack)
    - **Docs Engineer** loads the `documentation-standards` skill; editing `.md` files auto-injects `documentation-standards` instructions
 4. Whenever any agent runs a terminal command, the **`tool-guardian`** hook intercepts and blocks destructive operations
 
@@ -170,6 +176,40 @@ The real SDLC isn't linear. These feedback loops are built into the agents:
 
 In **orchestrated mode** (Project Lead driving), the Project Lead manages the iteration count. In **manual mode** (handoff buttons), the user decides when to stop iterating.
 
+## Project Classification
+
+The framework adapts to your project. In Phase 0, the Project Lead reads the `## Project Classification` section from `copilot-instructions.md`. If fields are blank, **it asks you interactively**.
+
+### Classification Fields
+
+| Field | Options | What It Controls |
+|-------|---------|-----------------|
+| **Archetype** | backend, frontend, fullstack, monorepo, microservice | File structure, which stacks to init, task decomposition |
+| **Scope** | prototype, mvp, production | Which phases run, design depth, quality rigour |
+| **Stack** | e.g., Python/FastAPI, React/Next.js | Environment setup, linter/formatter selection |
+| **Repo Strategy** | single-repo, monorepo, multi-repo | Task scoping, package boundaries |
+| **Auth Required** | yes, no | Whether auth middleware/tests are planned |
+| **Database** | none, sqlite, postgres, mongo, ... | Whether migration/ORM tasks are planned |
+| **Integrations** | none, or list | Whether third-party adapter tasks are planned |
+
+### How Scope Affects the Pipeline
+
+| Scope | Phases | Quality Level |
+|-------|--------|--------------|
+| **Prototype** | Phase 0 → 3 → 4 | Happy-path tests only. No architecture, review, or docs. Single-file OK. |
+| **MVP** | Phase 0 → 1 → 3 → 4 → 5 → 6 | Lightweight review. Minimal docs. Skip deep architecture. |
+| **Production** | Phase 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 | Full pipeline. Security review. Complete docs. |
+
+### How Archetype Affects Agents
+
+| Archetype | Planner | Architect | Developer |
+|-----------|---------|-----------|-----------|
+| **backend** | API-first tasks, no UI | API contracts, data layer | Backend stack only |
+| **frontend** | Component/routing tasks, no DB | Component tree, state mgmt | Frontend stack only |
+| **fullstack** | Backend API first, then frontend | API contract is the boundary | Both stacks, separate tests |
+| **monorepo** | Tasks scoped per package | Package boundaries, shared libs | Init per workspace |
+| **microservice** | API contracts first, then services | Inter-service contracts | Stub cross-service deps |
+
 ## Agent Roles
 
 | Agent | Tools | MCP | Role |
@@ -192,6 +232,8 @@ Skills are **on-demand engineering knowledge** loaded by agents when relevant. T
 | `code-quality` | Developer, Reviewer | Naming, function design, error handling, anti-patterns |
 | `security-best-practices` | Developer, Reviewer | OWASP Top 10, secrets, input validation |
 | `testing-strategy` | Test Engineer | Test design, mocking, coverage, AAA pattern |
+| `data-testing` | Test Engineer | Data quality, schema contracts, DataFrame fixtures, pipeline testing |
+| `ai-testing` | Test Engineer | Prompt testing, LLM response validation, non-determinism, cost guardrails |
 | `project-planning` | Planner | INVEST criteria, decomposition, dependency mapping |
 | `system-design` | Architect | Architecture patterns, ADRs, interface design |
 | `documentation-standards` | Docs Engineer | README templates, writing style, docstring formats |
@@ -208,6 +250,7 @@ Instructions automatically apply to matching files — no manual loading needed.
 | `testing-conventions` | `test_*.py, *.test.ts, *.test.js, tests/**, __tests__/**` | TDD workflow, AAA pattern, naming, isolation, coverage |
 | `context-engineering` | `copilot-instructions.md, *.agent.md, *.prompt.md, SKILL.md` | Context layering, progressive disclosure, freshness, anti-patterns |
 | `documentation-standards` | `*.md` | Writing style, formatting, README structure, quality checklist |
+| `development-workflow` | `*.py, *.ts, *.js, *.go, *.rs, *.cs, *.toml, *.json, *.yaml` | Branching strategy, environment activation, pre-commit quality gates |
 
 ## MCP Integration
 
@@ -235,9 +278,10 @@ Agents also post Jira comments at key moments (if `Post progress comments` is en
 
 ### Setup
 
-The Atlassian MCP server (`.vscode/mcp.json`) provides Jira and Confluence access. Configure these environment variables on your machine:
+The MCP servers (`.vscode/mcp.json`) provide Jira, Confluence, and GitHub access. Configure these environment variables on your machine:
 
 ```bash
+# Atlassian (Jira + Confluence)
 export JIRA_URL="https://your-domain.atlassian.net"
 export JIRA_USERNAME="your-email@company.com"
 export JIRA_API_TOKEN="your-jira-api-token"
@@ -245,6 +289,8 @@ export CONFLUENCE_URL="https://your-domain.atlassian.net/wiki"
 export CONFLUENCE_USERNAME="your-email@company.com"
 export CONFLUENCE_API_TOKEN="your-confluence-api-token"
 ```
+
+The GitHub MCP server uses the built-in VS Code Copilot session — no additional credentials needed. It connects via `https://api.githubcopilot.com/mcp/insiders` automatically.
 
 ### Per-Project Configuration
 

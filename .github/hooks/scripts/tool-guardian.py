@@ -45,6 +45,9 @@ ASK_PATTERNS = [
     (r"\bgit\s+clean\s+-fd\b", "Remove untracked files"),
     (r"\bpip\s+install\b(?!.*-r\b)", "Package installation"),
     (r"\bnpm\s+install\b(?!.*package\.json)", "Package installation"),
+    (r"\bgit\s+commit\b(?!.*--amend)", "Git commit — confirm quality checks were run"),
+    (r"\bgit\s+merge\b.*\b(main|master|dev)\b", "Merge into protected branch — confirm"),
+    (r"\bgit\s+checkout\s+(main|master|dev)\s*$", "Switching to protected branch — confirm intent"),
 ]
 
 # Tools that execute commands (check these for threat patterns)
